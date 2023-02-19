@@ -3,7 +3,6 @@ const User = require("../models/User");
 
 //register user
 router.post("/register", async (req, res) => {
-  console.log("hit");
   const newUser = new User({
     username: req.body.username,
     email: req.body.email,
@@ -22,7 +21,6 @@ router.post("/register", async (req, res) => {
 //login
 router.post("/signin", async (req, res) => {
   const { email } = req.body;
-  console.log("hit");
   try {
     if (!email || !req.body.password) {
       return res.status(400).send("Please Enter Email and Password");
