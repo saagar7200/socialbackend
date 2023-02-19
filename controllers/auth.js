@@ -1,23 +1,31 @@
+const User = require("../models/User");
+
 //user register controller
-
 exports.registerUser = async (req, res) => {
-  async (req, res) => {
-    const newUser = new User({
-      username: req.body.username,
-      email: req.body.email,
-      password: req.body.password,
-    });
+  console.log("here");
+  const newUser = new User({
+    username: req.body.username,
+    email: req.body.email,
+    password: req.body.password,
+  });
 
-    try {
-      const user = await newUser.save();
-      const { password, createdAt, ...other } = user._doc;
-      res.status(200).json({ user: other });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+  console.log("new", newUser);
+
+  try {
+    const userExist = await User.findOne({ email: req.body.email }).select(
+      "+password"
+    );
+    if (userExist) {
+      return res.status(400).json({ message: "User already exists." });
     }
-  };
-};
 
+    const user = await newUser.save();
+    const { password, createdAt, ...other } = user._doc;
+    res.status(200).json({ user: other });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 //User Login controller
 exports.loginUser = async (req, res) => {
   const { email } = req.body;
