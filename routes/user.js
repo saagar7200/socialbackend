@@ -1,123 +1,27 @@
 const router = require("express").Router();
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
-const { findById } = require("../models/User");
+// const { findById } = require("../models/User");
+const userController = require("../controllers/userController");
 
-router.get("/", (req, res) => {
-  res.send("Welcome to user Homepage");
-});
+// router.get("/", (req, res) => {
+//   res.send("Welcome to user Homepage");
+// });
 
 //update user
-router.put("/:id", async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
-    if (req.body.password) {
-      try {
-        const salt = await bcrypt.genSalt(10);
-        req.body.password = await bcrypt.hash(req.body.password, salt);
-      } catch (err) {
-        return res.status(500).json(err.message);
-      }
-    }
-
-    try {
-      const user = await User.findByIdAndUpdate(req.params.id, {
-        $set: req.body,
-      });
-      res.status(200).json({
-        message: "Account has been updated.",
-      });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  } else {
-    return res
-      .status(403)
-      .json({ message: "You can update only your account!" });
-  }
-});
+router.put("/:id", userController.updateUser);
 
 //delete user
-router.delete("/:id", async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
-    try {
-      const user = await User.findByIdAndDelete(req.params.id);
-      if (!user) {
-        return res.status(404).json({
-          message: "User not found.",
-        });
-      }
-      res.status(200).json({
-        message: "Account has been Deleted.",
-      });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  } else {
-    return res
-      .status(403)
-      .json({ message: "You can Delete only your account!" });
-  }
-});
+router.delete("/:id", userController.deleteUser);
 
 //get a user
 
-router.get("/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found." });
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(500).json({ message: `${err.message}` });
-  }
-});
+router.get("/:id", userController.getSingleUser);
 
 //follow
-router.put("/:id/follow", async (req, res) => {
-  if (req.body.userId === req.params.id) {
-    return res.status(500).json({ message: "You can not follow yourself." });
-  }
-  try {
-    const user = await User.findById(req.params.id).select("-password");
-    const currentUser = await User.findById(req.body.userId).select(
-      "-password"
-    );
-
-    if (currentUser.followings.includes(req.params.id)) {
-      return res
-        .status(500)
-        .json({ message: "You already  follow this user." });
-    }
-    await user.updateOne({ $push: { followers: req.body.userId } });
-    await currentUser.updateOne({ $push: { followings: req.params.id } });
-    res.status(200).json({ message: `User has been followed.` });
-  } catch (err) {
-    res.status(500).json({ message: `${err.message}` });
-  }
-});
+router.put("/:id/follow", userController.folllowUser);
 
 //unfollow
-router.put("/:id/unfollow", async (req, res) => {
-  if (req.body.userId === req.params.id) {
-    return res.status(500).json({ message: "You can not unfollow yourself." });
-  }
-  try {
-    const user = await User.findById(req.params.id).select("-password");
-    const currentUser = await User.findById(req.body.userId).select(
-      "-password"
-    );
+router.put("/:id/unfollow", userController.unfollowUser);
 
-    if (!currentUser.followings.includes(req.params.id)) {
-      return res
-        .status(500)
-        .json({ message: `You are not following ${user.username}.` });
-    }
-    await user.updateOne({ $pull: { followers: req.body.userId } });
-    await currentUser.updateOne({ $pull: { followings: req.params.id } });
-    res
-      .status(200)
-      .json({ message: `You has been unfollowed ${user.username}.` });
-  } catch (err) {
-    res.status(500).json({ message: `${err.message}` });
-  }
-});
 module.exports = router;
